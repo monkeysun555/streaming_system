@@ -1,0 +1,29 @@
+<html>
+<head>
+	Live
+</head>
+<body>
+  <script type="text/javascript" src="js/Decoder.js"></script>
+  <script type="text/javascript" src="js/YUVCanvas.js"></script>
+  <script type="text/javascript" src="js/Player.js"></script>
+  <script type="text/javascript" src="js/clientPlayer_frame.js"></script>
+  <canvas id="mycanvas"></canvas>
+  <script type="text/javascript">
+		document.addEventListener('DOMContentLoaded', function(){
+			let newplayer = new myPlayer({
+				useWorker : false,
+				workerFile : "js/Decoder.js",
+				webgl : "auto",
+				size: {
+			        width: 1280,
+			        height: 720 
+			         }
+			// }, '10.18.61.84', 34343);
+			}, '127.0.0.1', 34343);
+			newplayer.canvas;
+			newplayer.clientSocket();
+		},false);
+  </script>
+</body>
+</html>
+

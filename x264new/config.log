@@ -1,0 +1,121 @@
+checking for -Werror=unknown-warning-option... no
+Failed commandline was:
+--------------------------------------------------
+gcc conftest.c  -Wall -I. -I$(SRCPATH)  -Werror=unknown-warning-option   -o conftest
+cc1: error: -Werror=unknown-warning-option: no option -Wunknown-warning-option
+--------------------------------------------------
+Failed program was:
+--------------------------------------------------
+int main (void) {  return 0; }
+--------------------------------------------------
+x264 configure script
+Command line options: "--enable-shared"
+
+checking whether gcc works... yes
+checking whether gcc supports for( int i = 0; i < 9; i++ ); with -std=gnu99... yes
+checking for -mpreferred-stack-boundary=6... yes
+checking whether nasm supports vmovdqa32 [eax]{k1}{z}, zmm0... yes
+checking whether gcc supports __asm__("pabsw %xmm0, %xmm0");... yes
+checking for pthread_create(0,0,0,0); in pthread.h... yes
+checking for cpu_set_t p_aff; return CPU_COUNT(&p_aff); in sched.h... yes
+checking for log2f(2); in math.h... yes
+checking for strtok_r(0, 0, 0); in string.h... yes
+checking for clock_gettime(CLOCK_MONOTONIC, 0); in time.h... yes
+checking whether defined(MAP_PRIVATE) is true... yes
+checking for MADV_HUGEPAGE; in sys/mman.h... yes
+checking for packages: libswscale libavutil... yes
+checking for sws_init_context(0,0,0); in libswscale/swscale.h... yes
+checking for AVComponentDescriptor x; x.depth = 8; in libavutil/pixdesc.h... yes
+checking for packages: libavformat libavcodec libavutil... yes
+checking for av_register_all(); in libavformat/avformat.h... yes
+checking for avcodec_send_packet(0,0); in libavcodec/avcodec.h... yes
+checking for packages: ffms2... no
+Failed commandline was:
+--------------------------------------------------
+pkg-config --exists ffms2
+--------------------------------------------------
+checking for FFMS_DestroyVideoSource(0); in ffms.h... no
+Failed commandline was:
+--------------------------------------------------
+gcc conftest.c -m64  -Wall -I. -I$(SRCPATH) -std=gnu99 -D_GNU_SOURCE -mpreferred-stack-boundary=6   -lffms2  -m64  -lm -lpthread -o conftest
+conftest.c:1:18: fatal error: ffms.h: No such file or directory
+compilation terminated.
+--------------------------------------------------
+Failed program was:
+--------------------------------------------------
+#include <ffms.h>
+int main (void) { FFMS_DestroyVideoSource(0); return 0; }
+--------------------------------------------------
+checking for FFMS_DestroyVideoSource(0); in ffms.h... no
+Failed commandline was:
+--------------------------------------------------
+gcc conftest.c -m64  -Wall -I. -I$(SRCPATH) -std=gnu99 -D_GNU_SOURCE -mpreferred-stack-boundary=6   -lffms2 -lstdc++  -L/usr/local/lib -lavformat -lm -lz -lavcodec -pthread -lm -lz -lswresample -lm -lavutil -pthread -lm  -m64  -lm -lpthread -o conftest
+conftest.c:1:18: fatal error: ffms.h: No such file or directory
+compilation terminated.
+--------------------------------------------------
+Failed program was:
+--------------------------------------------------
+#include <ffms.h>
+int main (void) { FFMS_DestroyVideoSource(0); return 0; }
+--------------------------------------------------
+checking for packages: liblsmash... no
+Failed commandline was:
+--------------------------------------------------
+pkg-config --exists liblsmash
+--------------------------------------------------
+checking for lsmash_destroy_root(0); in lsmash.h... no
+Failed commandline was:
+--------------------------------------------------
+gcc conftest.c -m64  -Wall -I. -I$(SRCPATH) -std=gnu99 -D_GNU_SOURCE -mpreferred-stack-boundary=6  -I/usr/local/include  -I/usr/local/include   -llsmash  -L/usr/local/lib -lavformat -lm -lz -lavcodec -pthread -lm -lz -lswresample -lm -lavutil -pthread -lm  -L/usr/local/lib -lswscale -lm -lavutil -pthread -lm  -m64  -lm -lpthread -o conftest
+conftest.c:1:20: fatal error: lsmash.h: No such file or directory
+compilation terminated.
+--------------------------------------------------
+Failed program was:
+--------------------------------------------------
+#include <lsmash.h>
+int main (void) { lsmash_destroy_root(0); return 0; }
+--------------------------------------------------
+checking for -lz... yes
+checking for gf_isom_close(0); in gpac/isomedia.h... no
+Failed commandline was:
+--------------------------------------------------
+gcc conftest.c -m64  -Wall -I. -I$(SRCPATH) -std=gnu99 -D_GNU_SOURCE -mpreferred-stack-boundary=6  -I/usr/local/include  -I/usr/local/include  -lgpac_static -lz  -L/usr/local/lib -lavformat -lm -lz -lavcodec -pthread -lm -lz -lswresample -lm -lavutil -pthread -lm  -L/usr/local/lib -lswscale -lm -lavutil -pthread -lm  -m64  -lm -lpthread -o conftest
+conftest.c:1:27: fatal error: gpac/isomedia.h: No such file or directory
+compilation terminated.
+--------------------------------------------------
+Failed program was:
+--------------------------------------------------
+#include <gpac/isomedia.h>
+int main (void) { gf_isom_close(0); return 0; }
+--------------------------------------------------
+checking for uint32_t test_vec __attribute__ ((vector_size (16))) = {0,1,2,3}; in stdint.h... yes
+checking for stdio.h... yes
+checking for -fno-tree-vectorize... yes
+checking for fseeko(stdin,0,0); in stdio.h... yes
+checking for -Wshadow... yes
+checking for -Wmaybe-uninitialized... yes
+
+platform:      X86_64
+byte order:    little-endian
+system:        LINUX
+cli:           yes
+libx264:       internal
+shared:        yes
+static:        no
+asm:           yes
+interlaced:    yes
+avs:           avxsynth
+lavf:          yes
+ffms:          no
+mp4:           no
+gpl:           yes
+thread:        posix
+opencl:        yes
+filters:       resize crop select_every
+lto:           no
+debug:         no
+gprof:         no
+strip:         no
+PIC:           yes
+bit depth:     all
+chroma format: all

@@ -1,0 +1,50 @@
+<html>
+<head>
+	Live Streaming <br/>
+</head>
+<body>
+  <script type="text/javascript" src="./js/Decoder.js"></script>
+  <script type="text/javascript" src="./js/YUVCanvas.js"></script>
+  <script type="text/javascript" src="./js/Player.js" ></script>
+  <script type="text/javascript" src="./js/clientBuffer.js"></script>
+  <!-- <script type="text/javascript" src="./js/clientPlayer.js"></script> -->
+  <script type="text/javascript" src="./js/bundle_clientPlayer.js"></script>
+  <!-- <script type="text/javascript" src="./js/algo.js"></script> -->
+  <!-- <script type="text/javascript" src="./bundled.js"></script> -->
+
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.15.3"></script> -->
+  <!-- <script src="./node_modules/@tensorflow/tfjs/dist/tf.js"></script> -->
+  <canvas id="mycanvas" style="border:1px solid" ></canvas> <br />
+
+  Buffer Length: <input type="text" id="buffer_length" value="0.0" > Seconds <br />
+  Realtime Latency : <input type="text" id="real_latency" value="0.0"> Seconds <br />
+  Realtime Bandwidth : <input type="text" id="real_bandwidth" value="0.0"> Mbps <br />
+  Segment Index : <input type="text" id="seg_index" value="0.0">
+
+  <script type="text/javascript">
+    var S_INFO = 8
+    var S_LEN = 15
+    var A_DIM = 6
+    var TEST_A_DIM = 4
+	document.addEventListener('DOMContentLoaded', function(){
+		let newplayer = new myPlayer({
+			useWorker : false,
+			workerFile : "js/Decoder.js",
+			webgl : "auto",
+			size: {
+		        width: 720,
+		        height: 480
+		         }
+		// }, '10.18.10.3', 34343, 25, 0, 5, 2); 	//portnumber, fps, target_latency, chunk_in_seg, startup){
+		// }, '10.18.61.84', 34343, 25, 2, 5, 2);
+		// }, '192.168.1.8', 34343, 25, 5, 5, 2);
+		// }, '127.0.0.1', 34343, 25, 2, 5, 2);
+		//}, '10.0.0.102', 34343, 25, 0, 5, 2);
+    }, '192.168.1.179', 34343, 25, 0, 5, 1);
+		newplayer.canvas;
+		//newplayer.clientSocket();
+	},false);
+  </script>
+</body>
+</html>
+
