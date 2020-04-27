@@ -17,6 +17,8 @@ var recvBuffer = function(_playerconfig, fps, chunk_in_seg, startup){
 	this.print_frame_counter = 0;
 	this.print_seg_idx = 0;
 	this.pre_lat = 0;
+	this.now_data_size = 0;
+	this.flag = 0;
 	// this.temp_chunk = new Array();
 	// this.chunk_list = new Array();
 	// var that = this;
@@ -219,6 +221,8 @@ recvBuffer.prototype.onReceivData = function(data, chunks) {
 	//this.frameCounter %= 25;
 	this.freezing = 0.0;
 	// console.log("state is " + this.state);
+
+
 	if (this.state == 0 && this.buffer_length >= this.startup){
 		this.state = 1;
 		this.updateInfo();
@@ -257,6 +261,8 @@ recvBuffer.prototype.updateDelay = function(){
 
 recvBuffer.prototype.onDecodeMessage = function(nal) {
 	this.segFrameidx--;
+	this.now_data_size = nal.length;
+	this.flag = 1;
 	this.player.decode(nal);
 	if(this.segFrameidx % this.fps == 0) {
 		// console.log(new Date());
@@ -272,11 +278,13 @@ recvBuffer.prototype.onDecodeMessage = function(nal) {
 
 recvBuffer.prototype.adjustTimeInterval = function(multiply, speed_state) {  //use this to addjust the pace
 	// if this.loopFind
-	console.log("Speed changes to!!!!!!!!!!!!!!!!!!!!!!!!!\t", speed_state);
+	console.log("Speed changes to!!!!!!!!!!!!!!!!!!!!!!!!!\t", speed_state) ;
 	clearInterval(this.loopFind);
 	var t = this;
+	var newfps = multiply * this.fps;
+	console.log("new fps is " + newfps);
 	this.loopFind = setInterval(function() {
-    		t.findFrame();}, 1000/(multiply * this.fps));
+    		t.findFrame();}, 1000/newfps);
 	this.speed_state = speed_state;
 
 }

@@ -32,6 +32,8 @@ function myPlayer(_playerconfig, server_addr, server_port, fps, target_latency, 
 	// 	var ms = myDate.getMilliseconds();    //获取当前毫秒数(0-999)
 	// 	console.log("start time is "+ mm + ":" + ss + ":" + ms);
 	this.loadModel(server_addr); // siquan 
+	this.chunk_size = 0;
+	this.upload_flag = 0;
 	
 
 	//this.connectionInfo = navigator.connection
@@ -39,7 +41,8 @@ function myPlayer(_playerconfig, server_addr, server_port, fps, target_latency, 
 	 //navigator.connection.addEventListener('change', this.getBW);
 	// this.getBW();
 
-	this.ws = new WebSocket("ws://192.168.1.179:33333");
+	this.ws = new WebSocket("ws://10.7.5.101:33333");
+	// this.ws = new WebSocket("ws://192.168.1.179:33333");
 	this.ws.onopen = function(evt) { 
   		console.log("Connection open ..."); 
   		//ws.send(this.pre_bw);
@@ -103,6 +106,7 @@ myPlayer.prototype.calculateBW = function(data_size){
 	} else {
 		this.pre_bw = 8 * data_size / (this.message_time_recording - this.pre_time_recording); // in kbps
 	}
+	this.chunk_size = data_size * 8 / 1000; // kbits
 	// console.log(this.message_time_recording, this.pre_time_recording , (this.message_time_recording - this.pre_time_recording), 8 * data_size, this.pre_bw);
 	// this.pre_time_recording = 0.0;
 	// this.message_time_recording = 0.0;
@@ -148,11 +152,7 @@ myPlayer.prototype.requestSeg = function(){
 	//this.seg_idx+= 1;
 	//this.chunk_idx = 0;
 
-	// var myDate = new Date();
-	// var mm = myDate.getMinutes();     //获取当前分钟数(0-59)
-	// var ss = myDate.getSeconds();     //获取当前秒数(0-59)
-	// var ms = myDate.getMilliseconds();    //获取当前毫秒数(0-999)
-	// console.log( mm + ":" + ss + ":" + ms);
+
 	this.socket.send(JSON.stringify({
 		type: 'SEG_REQ', seg_idx: this.seg_idx, br_idx: this.br_idx
 		// type: 'SEG_REQ', seg_idx: 0, br_idx: this.br_idx
@@ -166,11 +166,18 @@ myPlayer.prototype.requestSeg = function(){
 	// Adjust speed
 	// Hard coding latency changing
 	if (this.buffer.state == 1 ){
-		if (this.pre_lat >= 5000 && this.buffer.speed_state != 1) {
-			this.buffer.adjustTimeInterval(1.1, 1); // modify by siquan
+		console.log("latency is " + document.getElementById("real_latency").value);
+		if (document.getElementById("real_latency").value >= 4)  {
+			if(this.buffer.speed_state != 1) {
+				this.buffer.adjustTimeInterval(1.2, 1); // modify by siquan
+			}			
+			
 		}
-		else if (this.pre_lat <= 3000 && this.buffer.speed_state != 0) {
-			this.buffer.adjustTimeInterval(1, 0); // modify by siquan
+		else if (document.getElementById("real_latency").value <= 3) {
+			if(this.buffer.speed_state == 1) {
+				this.buffer.adjustTimeInterval(1, 0); // modify by siquan
+			}
+			
 		}
 	}
 }
@@ -260,11 +267,6 @@ myPlayer.prototype.clientSocket = function(){
 			var header = newdata.splice(0, 4);
 			var headerRet = that.processHeader(header);
 			// console.log("head[1] is " + headerRet[1]);
-			var myDate = new Date();
-		// var mm = myDate.getMinutes();     //获取当前分钟数(0-59)
-		// var ss = myDate.getSeconds();     //获取当前秒数(0-59)
-		// var ms = myDate.getMilliseconds();    //获取当前毫秒数(0-999)
-		// console.log( mm + ":" + ss + ":" + ms);
 			if (headerRet[0] == 4 ) {
 				// It is a ping request
 			} else {
@@ -380,15 +382,19 @@ function sleep (time) {
 }
 
 myPlayer.prototype.upload = function() {
+
+
 	var myDate = new Date();
 	var mm = myDate.getMinutes();     //获取当前分钟数(0-59)
 	var ss = myDate.getSeconds();     //获取当前秒数(0-59)
 	var ms = myDate.getMilliseconds();    //获取当前毫秒数(0-999)
-	this.ws.send(this.buffer.print_seg_idx + " "+ mm + ":" + ss + ":" + ms +" " + this.seg_idx + " " + this.br_idx+" "+ document.getElementById("buffer_length").value +" " + document.getElementById("real_bandwidth").value + " " + document.getElementById("real_latency").value);
+	this.ws.send(this.buffer.print_seg_idx + " "+ mm + ":" + ss + ":" + ms +" " + this.seg_idx + " " + this.chunk_idx+ " " + this.chunk_size + " " + this.br_idx+" "+ document.getElementById("buffer_length").value +" " + document.getElementById("real_bandwidth").value + " " + document.getElementById("real_latency").value);
+
+	
 	//this.ws.send("buffer   \t" + document.getElementById("buffer_length").value);
 	//this.ws.send("bandwidth\t" + document.getElementById("real_bandwidth").value);
 	//this.ws.send("latancy  \t" + document.getElementById("real_latency").value);
-	setTimeout( () => { this.upload()}, 250);
+	setTimeout( () => { this.upload()}, 100);
 }
 
 // Following is for 360 rendering

@@ -1,0 +1,1 @@
+echo "123" >> xxx.log

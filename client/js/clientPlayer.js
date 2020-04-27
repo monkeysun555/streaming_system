@@ -1,6 +1,7 @@
 /* For all the functions here, includuing player/socket init. */
 // import * as tf from '@tensorflow/tfjs';
 // Init Websocket
+
 function myPlayer(_playerconfig, server_addr, server_port, fps, target_latency, chunk_in_seg, startup){
 	this.state = 0;
 	this.socket;
@@ -19,6 +20,8 @@ function myPlayer(_playerconfig, server_addr, server_port, fps, target_latency, 
 	this.message_time_recording = 0.0;
 	this.pre_bw = 0.0;
 	this.state_obv = this.state_init();
+	this.h0 = this.hc0_init();
+	this.c0 = this.hc0_init();
 	this.server_wait = 0.0;
 	// var output;
 	this.qref = 2;
@@ -59,17 +62,44 @@ myPlayer.prototype.state_init = function() {
 	return state_arr;
 }
 
+myPlayer.prototype.hc0_init = function() {
+	var hc0_arr = new Array(4);
+	for (var i = 0; i < 4; i++) {
+		hc0_arr[i] = new Array(1);
+		for (var j = 0; j < 1; j++) {
+			hc0_arr[i][j] = new Array(32).fill(0);
+		}
+	}
+	return hc0_arr;
+}
+
 myPlayer.prototype.loadModel = async function(server_addr) {
 	//console.log(tf)
-	const torch = require("../node_modules/torchjs");
-	const MODEL_URL = 'http://' + server_addr + '/new_web_model/script_model-70000.pt';
-	//const FROZEN = 'http://' + server_addr + '/web_model/tensorflowjs_model.pb';
-	//this.model = await tf.loadGraphModel(MODEL_URL);
-	// for torch model
-	this.model = await new torch.ScriptModule(MODEL_URL);
-	console.log(this.model.toString());
-	//console.log(this.model);
+	/////////////////////////////// load tensorflowjs model //////////////////////////////
+	// const MODEL_URL = 'http://' + server_addr + '/new_web_model/model.json';
+	// this.model = await tf.loadGraphModel(MODEL_URL);
+	// console.log(this.model);
+	///////////////////////////////////////////////////////////////////////////
+
+	/////////////////////////////////// load torch model //////////////////////
+	// const torch = require("../node_modules/torchjs");
+	// this.model = await new torch.ScriptModule(MODEL_URL);
+	// console.log(this.model.toString());
+	//////////////////////////////////////////////////////////////////////
+	
+	/////////////////////////////////// load onnx model //////////////////////
+	
+	const onnxSession = new onnx.InferenceSession();
+	const MODEL_URL = 'http://' + server_addr + '/new_web_model/lstm.onnx';
+	await onnxSession.loadModel(MODEL_URL);
+	console.log(onnxSession)
+	////////////////////////////////////////////////////////////////////////
+
+
 	await this.clientSocket();
+
+
+
 	//const model = await tf.loadGraphModel(MODEL_URL);
 	//console.log(model.predict(arr))
 	//console.log(this.model);
@@ -111,16 +141,68 @@ myPlayer.prototype.calculateBW = function(data_size){
 	// this.pre_time_recording = 0.0;
 	// this.message_time_recording = 0.0;
 }
+function transpose(a) {
 
+	// Calculate the width and height of the Array
+	var w = a.length || 0;
+	var h = a[0] instanceof Array ? a[0].length : 0;
+  
+	// In case it is a zero matrix, no transpose routine needed.
+	if(h === 0 || w === 0) { return []; }
+  
+	/**
+	 * @var {Number} i Counter
+	 * @var {Number} j Counter
+	 * @var {Array} t Transposed data is stored in this array.
+	 */
+	var i, j, t = [];
+  
+	// Loop through every item in the outer array (height)
+	for(i=0; i<h; i++) {
+  
+	  // Insert a new row (array)
+	  t[i] = [];
+  
+	  // Loop through every item per item in outer array (width)
+	  for(j=0; j<w; j++) {
+  
+		// Save transposed data.
+		t[i][j] = a[j][i];
+	  }
+	}
+  
+	return t;
+}
 myPlayer.prototype.rl_choose_rate = function() {
 	// console.log(this.model);
 	//output = this.model.execute({['actor/InputData/X']: tf.tensor([this.state_obv])}, 
 	//'actor/actor_output/Softmax').dataSync();
 	//choose rate using the softmax output
-	// const output = this.model.execute(tf.tensor([this.state_obv]))
-	//torch model
-	const output = this.model.forward(torch.tensor([this.state_obv]))
-	this.br_idx = indexOfMax(output);
+	// console.log(this.state_obv)
+	// const outputs = this.model.predict(inputTensor).data()
+	// transpose_state = transpose(this.state_obv)
+	// const inputTensor = tf.tensor([transpose_state])
+	// h0_tensor = tf.tensor(this.h0)
+	// c0_tensor = tf.tensor(this.c0)
+	// const outputs = this.model.execute({'myInput': inputTensor}, ['myOutput'])
+	// console.log(outputs);
+
+	///////////////////// torch model /////////////////////////////////////////////////////////
+	// const output = this.model.forward(torch.tensor([this.state_obv]))
+	///////////////////////////////////////////////////////////////////////////////////////////
+
+	////////////////////// onnx model //////////////////////////////////////////////////////////
+	transpose_state = transpose(this.state_obv)
+	console.log(transpose_state)
+	const inputTensor = onnx.Tensor(transpose_state, 'float32', [1, 15, 8])
+	// const outputMap = await onnxSession.run(onnx.Tensor([inputTensor]));
+	const outputMap = onnxSession.run([inputTensor]);
+	console.log(outputMap);
+	const outputTensor = outputMap.values().next().value.data;
+	console.log(outputTensor);
+	/////////////////////////////////////////////////////////////////////////////////////////////
+
+	this.br_idx = indexOfMax(outputTensor);
 	this.br_idx = Math.min(this.br_idx, 4);
 	//var cumsum = new Array(A_DIM).fill(0);
 	/*

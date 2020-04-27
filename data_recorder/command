@@ -1,0 +1,3 @@
+./websocketd --port=33333 --devconsole sudo ./try.sh
+
+sudo tc qdisc change dev eth0 root tbf rate 3mbit burst 3000 latency 10ms
