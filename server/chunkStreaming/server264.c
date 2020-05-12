@@ -189,6 +189,7 @@ int serverEncoder(int br_idx) {
 			// Add timestamp at the head of data, assuming it is in the header
 			// gettimeofday(&g_tv, NULL);
 			// int seg_gap = *requested_br_seg_idx - request->seg_idx;
+			gettimeofday(&tv_start,NULL);
 			uint32_t u_sec = tv_start.tv_usec/1000;
 			memcpy(ptr_seg + 2, &u_sec, 4);
 			// printf("arrive herer\n");

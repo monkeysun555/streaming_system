@@ -55,7 +55,7 @@ int **chunk_byte_offset_list = NULL;
 
 int video_fps = FPS;
 // struct timeval g_tv;
-const int BITRATES[NUM_RATE] = {300, 500, 1000, 2000};
+const int BITRATES[NUM_RATE] = {1000, 2000, 3000, 4000};
 //const int BITRATES[NUM_RATE] = {300, 500, 1000, 2000, 3000, 6000};
 
 // uint8_t* seg_temp_3 = new uint8_t[MAX_CHUNK_LEN];	// Current chunk mem

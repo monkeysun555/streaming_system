@@ -48,11 +48,9 @@ function myPlayer(_playerconfig, server_addr, server_port, fps, target_latency, 
   		//ws.send(this.pre_bw);
 	};
 
+
 }
 
-// myPlayer.prototype.getBW = function() {
-// 	console.log(navigator.connection);
-// }
 
 myPlayer.prototype.state_init = function() {
 	var state_arr = new Array(S_INFO);
@@ -134,20 +132,22 @@ myPlayer.prototype.rl_choose_rate = function() {
 	}
 	this.br_idx = br-1;
 	this.br_idx = Math.min(this.br_idx, 3)
-	console.log("chose bit rate is " + this.br_idx);
+	// console.log("chose bit rate is " + this.br_idx);
 	//this.br_idx = 0;
 
 	// this.new_PI_choose_rate();
 }
 
 myPlayer.prototype.requestSeg = function(){
-	// if (this.seg_idx%10 == 0) {
-	// 	this.br_idx += 1;
-	// 	this.br_idx = (this.br_idx%3);
-	// }
 
+
+	console.log("requestSeg");
 	// Introduce Tensorflow here to choose the rate
-	this.rl_choose_rate();
+	
+	
+	//this.rl_choose_rate();
+	//this.naive_choose_rate();
+	this.new_PI_choose_rate();
 
 	//this.seg_idx+= 1;
 	//this.chunk_idx = 0;
@@ -157,16 +157,18 @@ myPlayer.prototype.requestSeg = function(){
 		type: 'SEG_REQ', seg_idx: this.seg_idx, br_idx: this.br_idx
 		// type: 'SEG_REQ', seg_idx: 0, br_idx: this.br_idx
 	}));
-	console.log(JSON.stringify({
-		type: 'SEG_REQ', seg_idx: this.seg_idx, br_idx: this.br_idx
-	}))
+	// console.log(JSON.stringify({
+	// 	type: 'SEG_REQ', seg_idx: this.seg_idx, br_idx: this.br_idx
+	// }))
 
 	// this.ws.send("seg idx " + this.seg_idx + "\tbr_idx" + this.br_idx);
 
 	// Adjust speed
 	// Hard coding latency changing
-	if (this.buffer.state == 1 ){
-		console.log("latency is " + document.getElementById("real_latency").value);
+
+
+	if (this.buffer.state == 1 ) {
+		// console.log("latency is " + document.getElementById("real_latency").value);
 		if (document.getElementById("real_latency").value >= 4)  {
 			if(this.buffer.speed_state != 1) {
 				this.buffer.adjustTimeInterval(1.2, 1); // modify by siquan
@@ -180,6 +182,7 @@ myPlayer.prototype.requestSeg = function(){
 			
 		}
 	}
+	
 }
 
 myPlayer.prototype.processHeader = function(header){
@@ -355,7 +358,10 @@ myPlayer.prototype.InitializePara = function(reply){
 	//this.playSeg_idx = this.seg_idx;
 	this.buffer.print_frame_counter = 0;
 	this.buffer.print_seg_idx = this.seg_idx;
-	this.upload(); // upload delay buffer bw data
+	// this.upload(); // upload delay buffer bw data
+	var t = this;
+	this.uploaddata = setInterval(function() {
+		t.upload();}, 200);
 }
 
 myPlayer.prototype.updateBWInfo = function(){
@@ -389,12 +395,7 @@ myPlayer.prototype.upload = function() {
 	var ss = myDate.getSeconds();     //获取当前秒数(0-59)
 	var ms = myDate.getMilliseconds();    //获取当前毫秒数(0-999)
 	this.ws.send(this.buffer.print_seg_idx + " "+ mm + ":" + ss + ":" + ms +" " + this.seg_idx + " " + this.chunk_idx+ " " + this.chunk_size + " " + this.br_idx+" "+ document.getElementById("buffer_length").value +" " + document.getElementById("real_bandwidth").value + " " + document.getElementById("real_latency").value);
-
-	
-	//this.ws.send("buffer   \t" + document.getElementById("buffer_length").value);
-	//this.ws.send("bandwidth\t" + document.getElementById("real_bandwidth").value);
-	//this.ws.send("latancy  \t" + document.getElementById("real_latency").value);
-	setTimeout( () => { this.upload()}, 100);
+	//setTimeout( () => { this.upload()}, 200);
 }
 
 // Following is for 360 rendering
@@ -543,9 +544,11 @@ myPlayer.prototype.HM = function() { // naive av
 	var result = 0;
 	for (var i = S_LEN - this.state_len; i < S_LEN; i++) {
 		result += 1 / (this.state_obv[0][i]/this.state_obv[1][i]);
+		// console.log("rate is " + (this.state_obv[0][i]/this.state_obv[1][i])  + " datasize is " + this.state_obv[0][i] + " time is " + this.state_obv[1][i]);
 	}
 	//result /= n;
 	result =  this.state_len / result;
+	console.log("result is " + result);
 	return result;
 
 	// return this.state_obv[0][S_LEN-1]/this.state_obv[1][S_LEN-1]
@@ -553,16 +556,21 @@ myPlayer.prototype.HM = function() { // naive av
 
 
 myPlayer.prototype.naive_choose_rate = function(state) {
-	var result = HM();
-	var br = choose_idx_by_rate(result);
+
+	var result = this.HM();
+	//console.log("result is " + result);
+	var br = this.choose_idx_by_rate(result * 1000);
 	this.br_idx = br;
 
 }
 
 myPlayer.prototype.choose_idx_by_rate = function(rate) {
 	var br = 0;
+
 	while (br < TEST_A_DIM - 1) {			// Real encoding 4 bitrates
-		if(rate > this.bitrates[br]) {
+		// console.log("in A_DIM" + br)
+		//console.log("bit rate is " + this.bitrates[br]);
+		if(rate > this.bitrates[br]) {			
 			br++;
 		} else {
 			break;

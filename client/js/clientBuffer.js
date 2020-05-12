@@ -17,8 +17,6 @@ var recvBuffer = function(_playerconfig, fps, chunk_in_seg, startup){
 	this.print_frame_counter = 0;
 	this.print_seg_idx = 0;
 	this.pre_lat = 0;
-	this.now_data_size = 0;
-	this.flag = 0;
 	// this.temp_chunk = new Array();
 	// this.chunk_list = new Array();
 	// var that = this;
@@ -34,79 +32,15 @@ recvBuffer.prototype.findFrame = function() {
 	// console.log(that);
 	//var myTime = setTimeout(that.findFrame, 1000/that.fps);
 	var frame_count = 0;
-	//var starting_time = Date.now();
+	var starting_time = new Date();
 	var first_nal_header;
 	var frame_nals;
+	//console.log(starting_time.getMilliseconds());
 
-	// pace debug
-	// console.log(counter)
-	// counter++;
-	// if(counter == 200) {
-	// 	that.adjustTimeInterval(10, 1);
-	// } else if(counter == 400){
-	// 	that.adjustTimeInterval(0.1, -1);
-	// } else if(counter == 420){
-	// 	that.adjustTimeInterval(1, 0);
-	// } 
-
-	// pace debug
-	// console.log(this);
+	//console.log("this");
 	if (this.buffer.length > 0){
 		var i = 2;
-		// There is an issue: the last frame in buffer will not be decoded!!!!
-		// while (i < this.buffer.length) {
-		// 	if (this.buffer[i] == 1 && this.buffer[i-1] == 0 && this.buffer[i-2] == 0) {
-		// 		if (this.buffer[i+1] == 101 || this.buffer[i+1] == 65){
-		// 			// Find a I or P or B frame
-		// 			frame_count += 1
-		// 		}
-		// 	}
-		// 	else if (this.buffer[i] == 0) {
-		// 		if (this.buffer[i+1] == 1 && this.buffer[i-1] == 0) {
-		// 			if (frame_count == 1) {
-		// 				if (this.buffer[i-2] == 0) {
-		// 					frame_nals = this.buffer.splice(0, i-2);
-		// 				} else {
-		// 					frame_nals = this.buffer.splice(0, i-1);
-		// 				}
-		// 				frame_count += 1;
-		// 				break;
-		// 			} else{
-		// 				if (this.buffer[i+2] == 101 || this.buffer[i+2] == 65) {
-		// 					frame_count += 1
-		// 				}
-		// 			}
-		// 		}
-		// 		else if (this.buffer[i+2] == 1 && this.buffer[i+1] == 0) {
-		// 			if (frame_count == 1) {
-		// 				if (this.buffer[i-1] == 0) {
-		// 					frame_nals = this.buffer.splice(0, i-1);
-		// 				} else {
-		// 					frame_nals = this.buffer.splice(0, i);
-		// 				}
-		// 				frame_count += 1;
-		// 				break;
-		// 			} else{
-		// 				if (this.buffer[i+3] == 101 || this.buffer[i+3] == 65) {
-		// 					frame_count += 1
-		// 				}
-		// 			}
-		// 		}
-		// 		else if (this.buffer[i+3] == 1 && this.buffer[i+1] == 0 && this.buffer[i+2] == 0 ) {
-		// 			if (frame_count == 1) {
-		// 					frame_nals = this.buffer.splice(0, i);
-		// 				}
-		// 				frame_count += 1;
-		// 				break;
-		// 			} else{
-		// 				if (this.buffer[i+4] == 101 || this.buffer[i+4] == 65) {
-		// 					frame_count += 1
-		// 				}
-		// 			}
-		// 		}
-
-		// 	i += 3;
-		// }
+		
 
 		while (i < this.buffer.length) {
 			if (this.buffer[i] == 1){
@@ -151,7 +85,8 @@ recvBuffer.prototype.findFrame = function() {
 
 		if (frame_count == 2){
 			// var start_decode = Date.now();
-			// console.log("start_decode, time is: " + start_decode);		
+			// console.log("start_decode, time is: " + start_decode);
+			// console.log("Get 1 effetive frame");		
 			var new_frame_nals = new Uint8Array(frame_nals);
 			this.onDecodeMessage(new_frame_nals);
 			empty_counter = 0;
@@ -159,6 +94,7 @@ recvBuffer.prototype.findFrame = function() {
 		}
 		else if (frame_count == 1){
 			// ONly one frame in buffer
+			// console.log("last frame in the buffer");
 			var new_frame_nals = new Uint8Array(this.buffer.splice(0, this.buffer.length)); 
 			this.onDecodeMessage(new_frame_nals);	
 			empty_counter = 0
@@ -167,6 +103,7 @@ recvBuffer.prototype.findFrame = function() {
 		}
 		else{
 			// console.log("Freezing, frame is not found");
+
 			empty_counter += 1;
 			this.freezing += 1000/this.fps;
 			clearInterval(this.loopFind);
@@ -228,8 +165,7 @@ recvBuffer.prototype.onReceivData = function(data, chunks) {
 		this.updateInfo();
 		// this.findFrame();
 		var t = this;
-		this.loopFind = setInterval(function() {
-    		t.findFrame();}, 1000/this.fps);
+		this.adjustTimeInterval(1, 0);
 		console.log("Starts to decode!");
 	}
 };
@@ -261,11 +197,8 @@ recvBuffer.prototype.updateDelay = function(){
 
 recvBuffer.prototype.onDecodeMessage = function(nal) {
 	this.segFrameidx--;
-	this.now_data_size = nal.length;
-	this.flag = 1;
 	this.player.decode(nal);
 	if(this.segFrameidx % this.fps == 0) {
-		// console.log(new Date());
 		this.updateDelay();
 	}
 	this.print_frame_counter += 1;
@@ -273,11 +206,10 @@ recvBuffer.prototype.onDecodeMessage = function(nal) {
 		this.print_frame_counter = 0;
 		this.print_seg_idx += 1;
 	}
-	// console.log(this.print_frame_counter + " " + this.print_seg_idx);
+	//console.log(this.print_frame_counter + " " + this.print_seg_idx);
 };
 
 recvBuffer.prototype.adjustTimeInterval = function(multiply, speed_state) {  //use this to addjust the pace
-	// if this.loopFind
 	console.log("Speed changes to!!!!!!!!!!!!!!!!!!!!!!!!!\t", speed_state) ;
 	clearInterval(this.loopFind);
 	var t = this;
