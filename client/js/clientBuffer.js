@@ -145,7 +145,7 @@ recvBuffer.prototype.updateTempChunk = function() {
 recvBuffer.prototype.updateInfo = function(){
 	document.getElementById("buffer_length").value = this.buffer_length/1000;
 	// console.log(this.buffer_length);
-	setTimeout( () => { this.updateInfo()}, 250);
+	setTimeout( () => { this.updateInfo()}, 1000);
 }
 
 recvBuffer.prototype.onReceivData = function(data, chunks) {
@@ -202,7 +202,7 @@ recvBuffer.prototype.onDecodeMessage = function(nal) {
 		this.updateDelay();
 	}
 	this.print_frame_counter += 1;
-	if(this.print_frame_counter >= 25) {
+	if(this.print_frame_counter >= this.fps) {
 		this.print_frame_counter = 0;
 		this.print_seg_idx += 1;
 	}
@@ -216,7 +216,7 @@ recvBuffer.prototype.adjustTimeInterval = function(multiply, speed_state) {  //u
 	var newfps = multiply * this.fps;
 	console.log("new fps is " + newfps);
 	this.loopFind = setInterval(function() {
-    		t.findFrame();}, 1000/newfps);
+    		t.findFrame();}, 1000/(newfps+0.5));
 	this.speed_state = speed_state;
 
 }

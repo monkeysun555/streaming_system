@@ -69,7 +69,8 @@ int serverEncoder(int br_idx) {
 	x264_param_t* pX264Param = new x264_param_t;
 	assert(pX264Param);
 	// x264_param_default(pX264Param);
-	x264_param_default_preset(pX264Param, "veryfast", "zerolatency");
+	x264_param_default_preset(pX264Param, "fast", "zerolatency");
+	// x264_param_default_preset(pX264Param, "medium", "zerolatency");
 
 	//* cpuFlags
 	pX264Param->i_threads = X264_SYNC_LOOKAHEAD_AUTO;

@@ -8,7 +8,7 @@ function myPlayer(_playerconfig, server_addr, server_port, fps, target_latency, 
 	this.server_addr = server_addr;
 	this.server_port = server_port;
 	this.bitrates;
-	this.br_idx = 0;
+	this.br_idx;
 	this.seg_idx;
 	this.chunk_idx;
 	this.buffer = new recvBuffer(_playerconfig, fps, chunk_in_seg, startup);
@@ -35,31 +35,6 @@ function myPlayer(_playerconfig, server_addr, server_port, fps, target_latency, 
 	this.chunk_size = 0;
 	this.upload_flag = 0;
 	
-
-
-	// iLQR variables
-	this.ilqr_len = 5;
-	this.n_iteration = 10;
-	this.w1 = 1
-    this.w2 = 1
-    this.w3 = 1 
-    this.w4 = 1
-    this.w5 = 1
-    this.barrier_1 = 1
-    this.barrier_2 = 1
-    this.delta = 0.2
-    // this.n_step
-    this.predicted_bw;
-    this.predicted_rtt; 
-    this.n_iteration = 50
-    this.Bu 
-    this.b0
-    this.r0
-    this.target_buffer
-    this.states = []
-    this.rates = []
-    this.step_size = 0.2
-    this.lat_data = ''
 
 	//this.connectionInfo = navigator.connection
 	//this.getBW = 
@@ -91,19 +66,9 @@ myPlayer.prototype.loadModel = async function(server_addr) {
 	const FROZEN = 'http://' + server_addr + '/web_model/tensorflowjs_model.pb';
 	
 
-	/////////////////////////////////////////////////////////////////////////////////////////
-	// var myDate1 = new Date()
-	// var ss1 = myDate1.getSeconds();     
-	// var ms1 = myDate1.getMilliseconds();   
-	// Only enabled when uusing DRL choose rate
-	// this.model = await tf.loadGraphModel(FROZEN, MODEL_URL);
-	// var myDate2 = new Date();
-	// var ss2 = myDate2.getSeconds();     
-	// var ms2 = myDate2.getMilliseconds();   
-	// console.log(ms2, ms1)
-	// this.lat_data = 'drl model ' + (ss2 - ss1) + ':' + (ms2 - ms1)
-	/////////////////////////////////////////////////////////////////////////////////////////
-
+	this.model = await tf.loadGraphModel(FROZEN, MODEL_URL);
+	// should be load while using RL
+	
 	//console.log(this.model);
 	await this.clientSocket();
 	//const model = await tf.loadGraphModel(MODEL_URL);
@@ -178,21 +143,18 @@ myPlayer.prototype.rl_choose_rate = function() {
 }
 
 myPlayer.prototype.requestSeg = function(){
+
+
 	console.log("requestSeg");
 	// Introduce Tensorflow here to choose the rate
 	
-	this.lat_data = ''   
-	var t1 = performance.now()
-	/////////////////////////////////////////////////////////////////////////////////////////
+	
+
 	// change choose
 	// this.naive_choose_rate();
-	this.new_PI_choose_rate();
-	// this.rl_choose_rate();
-	// this.iLQR_choose_rate();
-	/////////////////////////////////////////////////////////////////////////////////////////
-	var t2 = performance.now()
+	// this.new_PI_choose_rate();
+	this.rl_choose_rate();
 
-	this.lat_data = (t2 - t1)
 	//this.seg_idx+= 1;
 	//this.chunk_idx = 0;
 
@@ -404,8 +366,6 @@ myPlayer.prototype.InitializePara = function(reply){
 	this.buffer.print_seg_idx = this.seg_idx;
 	// this.upload(); // upload delay buffer bw data
 	var t = this;
-
-	// send metrics
 	this.uploaddata = setInterval(function() {
 		t.upload();}, 1000);
 }
@@ -432,19 +392,14 @@ myPlayer.prototype.calculateLat = function(start_time){
 function sleep (time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
-myPlayer.prototype.upload_lat = function() {
-}
-
 
 myPlayer.prototype.upload = function() {
-	// var myDate = new Date();
-	// var mm = myDate.getMinutes();     //获取当前分钟数(0-59)
-	// var ss = myDate.getSeconds();     //获取当前秒数(0-59)
-	// var ms = myDate.getMilliseconds();    //获取当前毫秒数(0-999)
-	// this.ws.send(this.buffer.print_seg_idx + " "+ mm + ":" + ss + ":" + ms +" " + this.seg_idx + " " + this.chunk_idx+ " " + this.chunk_size + " " + this.br_idx+" "+ document.getElementById("buffer_length").value +" " + document.getElementById("real_bandwidth").value + " " + document.getElementById("real_latency").value);
-
-	this.ws.send(this.lat_data)
-
+	var myDate = new Date();
+	var mm = myDate.getMinutes();     //获取当前分钟数(0-59)
+	var ss = myDate.getSeconds();     //获取当前秒数(0-59)
+	var ms = myDate.getMilliseconds();    //获取当前毫秒数(0-999)
+	this.ws.send(this.buffer.print_seg_idx + " "+ mm + ":" + ss + ":" + ms +" " + this.seg_idx + " " + this.chunk_idx+ " " + this.chunk_size + " " + this.br_idx+" "+ document.getElementById("buffer_length").value +" " + document.getElementById("real_bandwidth").value + " " + document.getElementById("real_latency").value);
+	//setTimeout( () => { this.upload()}, 200);
 }
 
 // Following is for 360 rendering
@@ -586,389 +541,11 @@ myPlayer.prototype.upload = function() {
 // 	setTimeout(draw,20);
 // }
 
-function multiply(a, b) {
-  var aNumRows = a.length, aNumCols = a[0].length,
-      bNumRows = b.length, bNumCols = b[0].length,
-      m = new Array(aNumRows);  // initialize array of rows
-  for (var r = 0; r < aNumRows; ++r) {
-    m[r] = new Array(bNumCols); // initialize the current row
-    for (var c = 0; c < bNumCols; ++c) {
-      m[r][c] = 0;             // initialize the current cell
-      for (var i = 0; i < aNumCols; ++i) {
-        m[r][c] += a[r][i] * b[i][c];
-      }
-    }
-  }
-  return m;
-}
-
-function sumArrayElements(){
-        var arrays= arguments, results= [], 
-        count= arrays.length, r= arrays[0].length, c = arrays[0][0].length;
-        // console.log(arrays, r, c)
-
-        for (var i=0;i<r;i++){
-        	var row = []
-        	for (var j=0;j<c;j++){
-        		var s = 0;
-        		for (var k=0;k<count;k++){
-        			s += arrays[k][i][j]
-        		}
-        		row.push(s)
-        	}
-        	results.push(row)
-        }
-        return results;
-    }
-
-function minus(){
-        var arrays= arguments, results= [], 
-        count= arrays.length, r= arrays[0].length, c = arrays[0][0].length;
-        // console.log(arrays, r, c)
-
-        for (var i=0;i<r;i++){
-        	var row = []
-        	for (var j=0;j<c;j++){
-        		var s = arrays[0][i][j] - arrays[1][i][j]
-        		row.push(s)
-        	}
-        	results.push(row)
-        }
-        return results;
-    }
-
-function transpose(mat) { 
-	var new_mat = [];
-	for (var i= 0; i < mat[0].length;i++){
-		// for each col of ori mat
-		var row = []
-		for (var j=0;j<mat.length;j++){
-			// for each row of ori mat
-			row.push(mat[j][i])
-		}
-		new_mat.push(row)
-	}
-	return new_mat
-    // for (var i = 0; i < mat.length; i++) { 
-    //     for (var j = 0; j < i; j++) { 
-    //         const tmp = mat[i][j]; 
-    //         mat[i][j] = mat[j][i]; 
-    //         mat[j][i] = tmp; 
-    //     } 
-    // } 
-    // return mat
-}
-
-function get_part(matrix, r_i, row, c_i, col){
-       var mat = [];
-       for(var i=r_i; i<row; i++){
-       	var r = [];
-       	for (var j=c_i; j < col; j++){
-          r.push(matrix[i][j]);
-       	}
-       	mat.push(r)
-       }
-       return mat;
-    }
-
-function get1d(matrix, r_i, row){
-	var mat = []
-	for (var i=r_i;i<row;i++){
-		mat.push(matrix[i])
-	}
-	return mat
-}
 
 
-
-
-
-myPlayer.prototype.update_matrix = function(step_i) {
-
-	curr_state = this.states[step_i]
-        curr_u = this.rates[step_i]
-        bw = this.predicted_bw[step_i]
-        rtt = 0.02
-        b = curr_state[0]
-        r = curr_state[1]
-        u = curr_u
-        f_1 = 100*(b-u/bw-rtt + (5-1)*this.delta)
-        f_2 = b-u/bw-rtt+5*this.delta
-        f_3 = 100*(b-u/bw-rtt + 5*this.delta-this.Bu)
-
-        ce_power = (b-u/bw-rtt + (5-1)*this.delta)
-        ce_power_1 = Math.min(-50*(u-0.1), -1)
-        ce_power_2 = 50*(u-6.15)
-        ce_power_terminate = (b-u/bw-rtt + 5*this.delta - 2 + 0.2)
-
-        approx_e_f1 = Math.pow(Math.E,f_1)
-        approx_e_f3 = Math.pow(Math.E,f_3)
-
-   
-    // console.log(f_1, f_2, f_3)
-    // console.log(ce_power, ce_power_1, ce_power_2, ce_power_terminate)
-
-    this.ft = [[(100*approx_e_f1/Math.pow((approx_e_f1+1),2))*(this.Bu*approx_e_f3+f_2)/(approx_e_f3+1) + 
-		((this.Bu*100*approx_e_f3+approx_e_f3+1-100*approx_e_f3*f_2)/Math.pow((approx_e_f3+1),2))*approx_e_f1/(approx_e_f1+1)-
-		100*this.delta*approx_e_f1/Math.pow((approx_e_f1+1),2),
-	                0, 
-	                -100*approx_e_f1*(this.Bu*approx_e_f3+f_2)/(bw*Math.pow((approx_e_f1+1),2)*(approx_e_f3+1)) + 
-	                (approx_e_f1/(approx_e_f1+1))*(-100*this.Bu*approx_e_f3-approx_e_f3-1+100*approx_e_f3*f_2)/(bw*Math.pow((approx_e_f3+1),2)) + 
-	                (100*this.delta*approx_e_f1)/(bw*Math.pow((approx_e_f1+1),2))],
-	               [0, 0, 1]]
-
-		approx_power0 = 4*(ce_power+1)
-        approx_power1 = 15*ce_power+3.2
-        approx_power2 = 20*(ce_power+0.2)
-        approx_power3 = 10*(ce_power+3)
-        approx_power4 = 5*(ce_power+1.5)
-        action_ratio = -1/(bw)
-
-        approx_e_0 = Math.pow(Math.E,approx_power0)
-        approx_e_1 = Math.pow(Math.E,approx_power1)
-        approx_e_2 = Math.pow(Math.E,approx_power2)
-        approx_e_3 = Math.pow(Math.E,approx_power3)
-        approx_e_4 = Math.pow(Math.E,approx_power4)
-
-        delta_b = this.w3*(-1/2*(4*approx_e_0*(1+approx_e_1)-2*15*approx_e_1*approx_e_0)/Math.pow((1+approx_e_1),3) +
-                         10*-1*Math.pow((1+approx_e_2),-2)*20*approx_e_2 + 
-                         28*-1*Math.pow((1+approx_e_3),-2)*10*approx_e_3 + 
-                         20*-1*Math.pow((1+approx_e_4),-2)*5*approx_e_4)
-        delta_u = action_ratio*delta_b
-
-        delta_bb = this.w3*(-1/2*((16*approx_e_0*(1+approx_e_1) + 
-                            4*approx_e_0*15*approx_e_1 - 
-                            30*(15*approx_e_1*approx_e_0 + 4*approx_e_0*approx_e_1))*(1+approx_e_1)- 
-                            3*15*approx_e_1*(4*approx_e_0*(1+approx_e_1)-2*15*approx_e_1*approx_e_0))/
-                            Math.pow((1+approx_e_1),4) - 
-                            200*Math.pow((1+approx_e_2),-2)*20*approx_e_2*(-2*Math.pow((1+approx_e_2),-1)*approx_e_2+1) - 
-                            280*Math.pow((1+approx_e_3),-2)*10*approx_e_3*(-2*Math.pow((1+approx_e_3),-1)*approx_e_3+1) - 
-                            100*Math.pow((1+approx_e_4),-2)*5*approx_e_4*(-2*Math.pow((1+approx_e_4),-1)*approx_e_4+1))
-        delta_bu = action_ratio*delta_bb
-        delta_uu = Math.pow(action_ratio,2)*delta_bb
-
-	    this.ct = transpose([[delta_b, this.w2*2*Math.log(r/u)/r, 
-                     this.w1*-1/u + this.w2*2*Math.log(u/r)/u -
-                     50*this.barrier_1*Math.pow(Math.E,ce_power_1) +
-                     50*this.barrier_2*Math.pow(Math.E,ce_power_2) + delta_u]])
-
-
-        this.CT = transpose([[delta_bb, 0, delta_bu],
-                            [0, this.w2*2*(1-Math.log(r/u))/Math.pow(r,2), -2*this.w2/(u*r)],
-                            [delta_bu, this.w2*-2/(u*r), 
-                             this.w1/Math.pow(u,2) + this.w2*2*(1-Math.log(u/r))/Math.pow(u,2) +
-                             2500.0*this.barrier_1*Math.pow(Math.E,ce_power_1) + 
-                             2500.0*this.barrier_2*Math.pow(Math.E,ce_power_2) + delta_uu]])
-}
-
-
-myPlayer.prototype.iterate_LQR = function() {
-    var VT = 0
-    var vt = 0
-    // console.log("ENter iterate")
-    // console.log(this.states)
-    // console.log(this.rates)
-    for (var i = 0; i < this.n_iteration;i++){
-
-    	var converge = 1,
-    	KT_list = [],
-        kt_list = [],
-        VT_list = [],
-        vt_list = [],
-        pre_xt_list = [],
-        new_xt_list = [],
-        pre_ut_list  = [],
-        d_ut_list = [];
-
-    	for (var j = 0;j<this.ilqr_len;j++){
-
-    		KT_list.push(0)
-            kt_list.push(0)
-            VT_list.push(0)
-            vt_list.push(0)
-            pre_xt_list.push(0)
-            new_xt_list.push(0)
-            pre_ut_list.push(0)
-            d_ut_list.push(0)
-    	}
-    
-    	for (var step_i = this.ilqr_len -1; step_i >=0; step_i--){
-        	this.update_matrix(step_i);
-        	// console.log(this.ft, this.ct, this.CT)
-            var xt = [[this.states[step_i][0]],[this.states[step_i][1]]]
-            var ut = [[this.rates[step_i]]]
-            pre_xt_list[step_i] = xt
-            pre_ut_list[step_i] = ut[0][0]
-            if (step_i == this.ilqr_len-1){
-                Qt = this.CT
-                qt = this.ct
-            }
-            else {
-            	// console.log(this.ft, transpose(this.ft), VT )
-                Qt = sumArrayElements(this.CT, multiply(multiply(transpose(this.ft), VT), this.ft))
-                qt = sumArrayElements(this.ct, multiply(transpose(this.ft), vt))
-                }       
-
-            Q_xx = get_part(Qt, 0, 2, 0, 2)  
-            Q_xu = get_part(Qt, 0, 2, 2, 3)
-            Q_ux = get_part(Qt, 2, 3, 0, 2)
-            Q_uu = get_part(Qt, 2, 3, 2, 3) 
-            // console.log(qt)  
-            q_x = get1d(qt, 0, 2)
-            q_u = get1d(qt, 2, 3)
-            // console.log(Q_xx, Q_xu, Q_ux, Q_uu, q_x, q_u)  
-            // console.log()
-            KT = multiply([[-1]], multiply([[1/Q_uu[0][0]]], Q_ux))
-            // console.log(KT)
-            kt = multiply([[-1]], multiply([[1/Q_uu[0][0]]], q_u))    
-            // console.log(kt)                       
-            // d_u = sumArrayElements(multiply(KT, xt), kt)
-            // console.log(d_u)
-            // console.log(Q_xx)
-            // // console.log(Q_xu, KT)
-            // console.log(multiply(Q_xu, KT))
-            // console.log(multiply(transpose(KT), Q_ux))
-            // // console.log(transpose(KT), Q_uu)
-            // // console.log(multiply(transpose(KT), Q_uu))
-            // // console.log(KT)
-            // console.log(multiply(multiply(transpose(KT), Q_uu), KT))
-            // console.log(multiply(transpose(KT), Q_ux))
-            // console.log(multiply(transpose(KT), Q_ux))
-
-            VT = sumArrayElements(Q_xx, multiply(Q_xu, KT), multiply(transpose(KT), Q_ux), multiply(multiply(transpose(KT), Q_uu), KT))
-            vt = sumArrayElements(q_x, multiply(Q_xu, kt), multiply(transpose(KT), q_u), multiply(multiply(transpose(KT), Q_uu), kt))
-            // console.log(VT)
-            // console.log(vt)
-            // d_ut_list[step_i] = d_u
-            KT_list[step_i] = KT
-            kt_list[step_i] = kt
-            VT_list[step_i] = VT
-            vt_list[step_i] = vt
-
-    	}
-    	// console.log(KT_list)
-
-
-    	// Then forward pass 
-    	new_xt_list[0] = pre_xt_list[0]
-        for (var step_i = 0; step_i < this.ilqr_len; step_i++) {
-            // console.log(new_xt_list[step_i], pre_xt_list[step_i])
-            d_x = minus(new_xt_list[step_i], pre_xt_list[step_i])
-            // console.log(d_x)
-            k_t = kt_list[step_i]
-            K_T = KT_list[step_i]
-            // console.log(k_t, K_T)
-            d_u = sumArrayElements(multiply(K_T, d_x), k_t)
-            // console.log(d_u)
-            new_u = pre_ut_list[step_i] + this.step_size*d_u[0]
-
-            if (converge == 1 && Math.round((new_u + Number.EPSILON) * 100) / 100  !=  Math.round((this.rates[step_i] + Number.EPSILON) * 100) / 100 ){
-                converge = 0 
-            }
-
-            this.rates[step_i] =  Math.round((new_u + Number.EPSILON) * 100) / 100
-            new_x = new_xt_list[step_i]       
-            rtt = 0.02
-            bw = this.predicted_bw[step_i]
-
-            new_next_b = this.sim_fetch(new_x[0][0], new_u, rtt, bw)     
-            if (step_i < this.ilqr_len - 1){
-                new_xt_list[step_i+1] = [[new_next_b], [new_u]]
-                this.states[step_i+1] = [Math.round((new_next_b + Number.EPSILON) * 100) / 100, this.rates[step_i]]
-            }
-                
-            else {
-                this.states[step_i+1] = [Math.round((new_next_b + Number.EPSILON) * 100) / 100, this.rates[step_i]]
-            }
-            // console.log(this.states)
-            // console.log(this.rates)
-		}
-        if (converge == 1){
-        	// console.log("converged at step ", step_i)
-            break
-        }
-
-    }  
-    r_idx = this.translate_to_rate_idx()
-    return r_idx   
-}
-
-myPlayer.prototype.translate_to_rate_idx = function() {
-        var first_action = this.rates[0]
-        //distance = [np.abs(first_action-br/KB_IN_MB) for br in BITRATE]
-        //rate_idx = distance.index(min(distance))
-        var rate_idx = 0;
-        for (var j=4; j>=0;j--){
-            if (this.bitrates[j]/1000 <= first_action){
-            	rate_idx = j
-            	break
-            }
-        }
-        console.log("choose rate, ", rate_idx)
-        return rate_idx
-}
-
-
-myPlayer.prototype.iLQR_choose_rate = function() {
-	this.set_x0();
-	this.predicted_bw = this.HM_iLQR();
-	this.generate_initial_x(this.predicted_bw[0])
-	this.br_idx = this.iterate_LQR();
-}
-
-myPlayer.prototype.generate_initial_x = function(i_rate) {
-	console.log('init state for ilqr')
-	this.rates = []
-	for (var i = 0; i < this.ilqr_len; i++) {
-	    this.rates.push(i_rate);
-	}
-
-	this.states = [];
-	this.states.push([this.b0, this.r0])
-	// console.log(this.states)
-	for (var r_idx = 0; r_idx < this.ilqr_len;r_idx ++){
-	    x = this.states[r_idx]
-	    u = this.rates[r_idx]
-	    bw = this.predicted_bw[r_idx]
-	    new_b = this.sim_fetch(x[0], u, 0.02, bw)
-	    new_x = [new_b, u]
-	    this.states.push(new_x)
-	}
-
-}
-
-myPlayer.prototype.set_x0 = function() {
-	this.b0 = this.buffer.buffer_length/1000;
-	this.r0 = this.bitrates[this.br_idx]/1000;
-	this.Bu = this.buffer.pre_lat/1000
-}
-
-
-myPlayer.prototype.HM_iLQR = function() { // naive av
-	var result = Math.min(this.HM(), 2.5);
-	return [result, result, result, result, result]
-}
-
-myPlayer.prototype.sim_fetch = function(buffer_len, seg_rate, rtt, bw) { // naive av
-	// console.log(buffer_len, seg_rate, rtt, bw)
-	seg_size = seg_rate
-    freezing = 0.0
-    wait_time = 0.0
-    current_reward = 0.0
-    download_time = seg_size/bw + rtt
-
-    freezing = Math.max(0.0, download_time - buffer_len - 4*0.2)
-    buffer_len = Math.max(buffer_len - download_time + 4*0.2, 0.0)
-    buffer_len += 0.2
-    buffer_len = Math.min(this.Bu, buffer_len)
-    return buffer_len 
-}
 
 myPlayer.prototype.HM = function() { // naive av
 	var result = 0;
-	if (this.state_len == 0 ){
-		return 0.3
-	}
 	for (var i = S_LEN - this.state_len; i < S_LEN; i++) {
 		result += 1 / (this.state_obv[0][i]/this.state_obv[1][i]);
 		// console.log("rate is " + (this.state_obv[0][i]/this.state_obv[1][i])  + " datasize is " + this.state_obv[0][i] + " time is " + this.state_obv[1][i]);
@@ -1010,7 +587,7 @@ myPlayer.prototype.PI_choose_rate = function() {
 	var m;
 	var arrlen = this.state_obv.length;
 	var counter = 0;
-	var threshold = this.qref; // target buffer len
+	var threshold = qref; // target buffer len
 	var Fk = fluctuate(); // fluctuate factor F(k)
 	var Ttk = HM(); // estimated bit rate
 	var vk = Fk * Ttk; // estimated  fluctuate bit rate (Mbps)
@@ -1050,9 +627,9 @@ myPlayer.prototype.new_PI_choose_rate = function() {
 	} else if (tunned_buffer < this.qref * 0.75){
 		var temp_rate = this.choose_idx_by_rate(this.HM()*1000);
 		if (temp_rate > this.br_idx ){
-			this.br_idx += 1;
+			self.br_idx += 1;
 		} else {
-			this.br_idx = temp_rate;
+			self.br_idx = temp_rate;
 		}
 		 this.last_buffer = this.buffer.buffer_length/1000;
 	} else {
@@ -1069,7 +646,7 @@ myPlayer.prototype.new_PI_choose_rate = function() {
 				 this.last_buffer = this.buffer.buffer_length/1000
 			} 
 		} else {
-			this.counter = 0
+			self.counter = 0
 		}
 		 this.last_buffer = this.buffer.buffer_length/1000
 	}
